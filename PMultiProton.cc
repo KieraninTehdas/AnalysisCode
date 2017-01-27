@@ -192,6 +192,7 @@ TLorentzVector PMultiProton::CalcMissingP4knock(const GTreeParticle &tree, Int_t
   TLorentzVector *lightCorrectedParticle = new TLorentzVector[tree.GetNParticles()];
 
   //Apply light correction to measured energy.
+  /*
   for (int i=0; i<tree.GetNParticles(); i++) {
     
     //Get measured energy from TLVector by subtracting proton mass.
@@ -199,38 +200,59 @@ TLorentzVector PMultiProton::CalcMissingP4knock(const GTreeParticle &tree, Int_t
 
     //Create copy of particle tree for corrections.
      lightCorrectedParticle[i] = tree.Particle(i);
-
-     //cout << "Measured KE: " << measuredEnergy <<endl;
-     //printf("Measured KE: %3.2f\n", measuredEnergy);
+     
+     cout << "Measured KE " << i << " : " << measuredEnergy <<endl;
+     
 
      //Apply correction to kinetic energy.
-     Double_t correctedEnergy = ((measuredEnergy * lightCorrection->Eval(measuredEnergy)) 
-				 + measuredEnergy);
+      Double_t correctedEnergy = ((measuredEnergy * lightCorrection->Eval(measuredEnergy)) 
+     			 + measuredEnergy);
 
-     // cout << "Light Corrected: " << correctedEnergy << endl;
-     // printf("Light Corrected: %3.2f\n", correctedEnergy);
+     //Test
+     // Double_t correctedEnergy = measuredEnergy;
+
+      cout << "Light Corrected " << i << " : " << correctedEnergy << endl;
+     
 
      //Set total corrected energy by adding back proton mass.
-    lightCorrectedParticle[i].SetE(correctedEnergy + protonMass());
+     //lightCorrectedParticle[i].SetE(correctedEnergy + protonMass());
+     
+     //Set total energy to just the kinetic energy.
+     lightCorrectedParticle[i].SetE(correctedEnergy);
   }
-
+  */
   
   //************ Apply energy corrections from KP sims ***************************************
 
+  //Create TLVector array to hold corrected particle data.
   TLorentzVector *energyCorrectedParticle = new TLorentzVector[tree.GetNParticles()];
 
   for (int i=0; i<tree.GetNParticles(); i++) {
 
+    //TEST
+    lightCorrectedParticle[i] = tree.Particle(i);
    
+    
 
+    //Apply theta cuts.
     energyCorrectedParticle[i] = CutTheta(lightCorrectedParticle[i]);
-    Double_t lightCorrectedEnergy = lightCorrectedParticle[i].E() - protonMass();
+
+    //Get kinetic energy from total and define variables to hold total 
+    //corrected kinetic energy and theta.
+    // Double_t lightCorrectedEnergy = lightCorrectedParticle[i].E() - protonMass();
+    
+    Double_t lightCorrectedEnergy = energyCorrectedParticle[i].E() -protonMass();
+    
     Double_t totalCorrectedEnergy;
     Double_t theta = energyCorrectedParticle[i].Theta();
-    //cout << "LC PreENERGY: " << lightCorrectedEnergy << endl;
-    //printf("LC PreENERGY: %3.2f\n", lightCorrectedEnergy);
+
+    cout << "LC PreENERGY " << i << " : " << lightCorrectedEnergy << endl;
+    
 
     //Start a disgusting loop to get correction from TGraph...
+
+    if (lightCorrectedEnergy > 0.0 || lightCorrectedEnergy < 400.0) {
+
     if (theta > 0.3665 && theta <=0.4014) {
       
       totalCorrectedEnergy = (lightCorrectedEnergy + 
@@ -463,11 +485,13 @@ TLorentzVector PMultiProton::CalcMissingP4knock(const GTreeParticle &tree, Int_t
 
     }
 
+    }
     //Shitty abominable if else block ends!!!!!!!!!!!!!!!!
 
     //Apply energy correction
-    if (totalCorrectedEnergy != 0.0 && energyCorrectedParticle[i].E() != 0.0) {
-     energyCorrectedParticle[i].SetE(totalCorrectedEnergy + protonMass());
+    if (lightCorrectedEnergy > 0.0 && totalCorrectedEnergy != 0.0 && energyCorrectedParticle[i].E() != 0.0) {
+     
+      energyCorrectedParticle[i].SetE(totalCorrectedEnergy + protonMass());
 
      //Calculate the momentum correction from the energy. Get theta/phi but don't change.
      Double_t E = energyCorrectedParticle[i].E();
@@ -478,9 +502,10 @@ TLorentzVector PMultiProton::CalcMissingP4knock(const GTreeParticle &tree, Int_t
      //energyCorrectedParticle[i].SetPtEtaPhiE(P, eta, phi, E);
      energyCorrectedParticle[i].SetRho(P);
 
-    }
-    //cout << "Total Corrected PostENERGY: " << totalCorrectedEnergy << endl;
-    //printf(" Total Corrected PostEnergy: %3.2f\n", totalCorrectedEnergy);
+    } 
+
+    cout << "Total Corrected PostENERGY " << i << " : " << totalCorrectedEnergy << endl;
+    
     }
   
 
@@ -540,6 +565,8 @@ TGraph* PMultiProton::GetTGraph(const char *filename, const char *graphname)
 
 }
 
+//Function to apply theta cuts.
+
 TLorentzVector PMultiProton::CutTheta(TLorentzVector Particle)
 {
   
@@ -562,8 +589,14 @@ TLorentzVector PMultiProton::CutTheta(TLorentzVector Particle)
     return zeroVector;
 
   }
-
-
-
 }
+  
+
+  
+  
+
+
+
+
+
 
